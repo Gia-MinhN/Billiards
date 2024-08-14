@@ -6,6 +6,7 @@
 #pragma once
 
 #define PI 3.14159265359
+#define WHITE sf::Color(237, 237, 223, 255)
 
 using namespace std;
 
@@ -86,7 +87,7 @@ class Ball {
         back.setFillColor(color);
 
         if(is_striped) {
-            back.setFillColor(sf::Color::White);
+            back.setFillColor(WHITE);
 
             int stripe_resolution = 30;
             float stripe_arc = 90.f;
@@ -106,7 +107,7 @@ class Ball {
         small_circle.setRadius(radius/2.5);
         small_circle.setOrigin(radius/2.5, radius/2.5);
         small_circle.setPointCount(60);
-        small_circle.setFillColor(sf::Color::White);
+        small_circle.setFillColor(WHITE);
 
         number_label.setString(to_string(number));
         number_label.setCharacterSize(radius/2);
@@ -118,32 +119,42 @@ class Ball {
         number_label.setOrigin(localBounds);
     }
 
-    Ball(int x, int y, float r, float m, bool striped, sf::Color col, int num, sf::Font *font) {
-        Ball((float)x, (float)y, r, m, striped, col, num, font);
-    }
-
-    Ball(Vector2<float> pos, float r, float m, bool striped, sf::Color col, int num, sf::Font *font) {
-        Ball(pos.x, pos.y, r, m, striped, col, num, font);
-    }
-
     // Methods
-    void drawBall(sf::RenderWindow *window) {
+    void draw(sf::RenderWindow *window) {
         back.setPosition(position.x, position.y);
         window->draw(back);
 
-        if(is_striped) {
-            stripe.setPosition(position.x, position.y);
-            window->draw(stripe);
+        if(number != 0) {
+            if(is_striped) {
+                stripe.setPosition(position.x, position.y);
+                window->draw(stripe);
+            }
+
+            small_circle.setPosition(position.x, position.y);
+            window->draw(small_circle);
+
+            number_label.setPosition((int)position.x, (int)position.y);
+            window->draw(number_label);
         }
-
-        small_circle.setPosition(position.x, position.y);
-        window->draw(small_circle);
-
-        number_label.setPosition((int)position.x, (int)position.y);
-        window->draw(number_label);
     }
 
     void update(float dt) {
+
+    }
+};
+
+class Cue {
+    public:
+
+    Vector2<float> p1, p2;
+    float width, length;
+
+    Cue(float w, float l) {
+        width = w;
+        length = l;
+    }
+
+    void draw(sf::RenderWindow *window) {
 
     }
 };

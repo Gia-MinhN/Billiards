@@ -19,6 +19,15 @@ const int window_height = sf::VideoMode::getDesktopMode().height/2;
 
 const int ball_size = 50;
 const int ball_mass = 100;
+const sf::Color color_order[7] = {
+    sf::Color(227, 211, 36, 255), // yellow 
+    sf::Color::Blue, 
+    sf::Color::Red, 
+    sf::Color(76, 17, 171, 255), // purple 
+    sf::Color(227, 154, 36, 255), // orange
+    sf::Color(44, 148, 67, 255), // green
+    sf::Color(148, 30, 30, 255) // dark red
+};
 
 // https://www.tutorialspoint.com/check-if-a-line-touches-or-intersects-a-circle-in-cplusplus
 // https://www.jeffreythompson.org/collision-detection/circle-rect.php
@@ -27,8 +36,20 @@ bool within_ball(Vector2<float> position, Ball ball) {
     return distance(position, ball.position) <= ball_size;
 }
 
-vector<Ball> generate_all_balls() {
+vector<Ball> generate_all_balls(sf::Font *font) {
+    vector<Ball> all_balls;
+    // White ball
+    all_balls.push_back(Ball(0.f, 0.f, ball_size, ball_mass, false, WHITE, 0, font));
+
+    // All solid/striped balls
+    for(int i = 1; i <= 7; i++) {
+        all_balls.push_back(Ball((float)i*ball_size*2, 0.f, ball_size, ball_mass, false, color_order[i-1], i, font));
+        all_balls.push_back(Ball((float)i*ball_size*2, (float)ball_size*2, ball_size, ball_mass, true, color_order[i-1], i+8, font));
+    }
     
+    // Black 8 ball
+    all_balls.push_back(Ball(0.f, (float)ball_size*2, ball_size, ball_mass, false, sf::Color::Black, 8, font));
+    return all_balls;
 }
 
 Vector2<float> window_position_transform(Vector2<float> position, Vector2<float> translate, float zoom) {
@@ -68,8 +89,7 @@ int main()
     font.loadFromFile("arial.ttf");
 
     // Testing
-    Ball b1 = Ball(0.f, 0.f, ball_size, ball_mass, false, sf::Color::Black, 8, &font);
-    Ball b2 = Ball(-150.f, 0.f, ball_size, ball_mass, true, sf::Color::Blue, 10, &font);
+    vector<Ball> all_balls = generate_all_balls(&font);
 
     // Loop to run the game
     while (window.isOpen())
@@ -88,7 +108,6 @@ int main()
                     zoom += event.mouseWheel.delta/10.f;
                     zoom = max(.5f, zoom);
                     zoom = min(3.f, zoom);
-                    printf("%f\n", zoom);
                     view.setSize(window_width/zoom, window_height/zoom);
                     break;
                 }
@@ -125,9 +144,9 @@ int main()
                             break;
                         }
                         case sf::Keyboard::R: {
-                            zoom = 1.f;
+                            zoom = .5f;
                             translate = {0, 0};
-                            view.setSize(window_width*zoom, window_height*zoom);
+                            view.setSize(window_width/zoom, window_height/zoom);
                             view.setCenter(0, 0);
                             break;
                         }
@@ -153,9 +172,9 @@ int main()
         window.clear(sf::Color(100, 125, 175, 255));
         window.setView(view);
 
-        b1.drawBall(&window);
-        b2.drawBall(&window);
-
+        for(Ball ball : all_balls) {
+            ball.draw(&window);
+        }
         window.display();
     }
 
