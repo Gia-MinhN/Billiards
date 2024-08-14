@@ -159,6 +159,28 @@ class Cue {
     }
 };
 
+class Table {
+    private:
+    sf::Texture texture;
+    sf::Sprite sprite;
+
+    public:
+    Table(float x, float y, float scale, sf::Image *image) {
+        texture.loadFromImage(*image);
+        texture.setSmooth(true);
+
+        sprite.setTexture(texture);
+        sprite.setOrigin(sprite.getLocalBounds().width/2, sprite.getLocalBounds().height/2);
+        sprite.setPosition(x, y);
+        sprite.setScale(scale, scale);
+        sprite.setRotation(90);
+    }
+
+    void draw(sf::RenderWindow *window) {
+        window->draw(sprite);
+    }
+};
+
 class Line {
     public:
     Vector2<float> p1, p2, normal;

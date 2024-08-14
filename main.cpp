@@ -14,10 +14,10 @@ using namespace std;
 
 // Globals
 
-const int window_width = sf::VideoMode::getDesktopMode().width/2;
-const int window_height = sf::VideoMode::getDesktopMode().height/2;
+const int window_width = 1000;
+const int window_height = 1000;
 
-const int ball_size = 50;
+const int ball_size = 25;
 const int ball_mass = 100;
 const sf::Color color_order[7] = {
     sf::Color(227, 211, 36, 255), // yellow 
@@ -88,7 +88,13 @@ int main()
     sf::Font font;
     font.loadFromFile("arial.ttf");
 
+    // Image
+    sf::Image image;
+    image.loadFromFile("pool_table.jpg");
+    
+
     // Testing
+    Table table = Table(0.f, 0.f, 2.f, &image);
     vector<Ball> all_balls = generate_all_balls(&font);
 
     // Loop to run the game
@@ -168,14 +174,19 @@ int main()
             translate = drag_start_position - mouse_position;
             view.setCenter(translate.x, translate.y);
         }
-
-        window.clear(sf::Color(100, 125, 175, 255));
+        // Reset wimndow
+        window.clear();
         window.setView(view);
+
+        // Drawing
+        table.draw(&window);
 
         for(Ball ball : all_balls) {
             ball.draw(&window);
         }
-        window.display();
+
+        // Display
+        window.display();   
     }
 
     return 0;
