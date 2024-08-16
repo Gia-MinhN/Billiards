@@ -6,16 +6,18 @@
 #include <stdlib.h>
 #include <thread>
 #include <SFML/Graphics.hpp>
-
 #include "vector_functions.hpp"
 #include "classes.hpp"
-//Hello from Vance
+
 using namespace std;
 
 // Globals
 
 const int window_width = 1000;
 const int window_height = 1000;
+
+
+
 
 const int ball_size = 25;
 const int ball_mass = 100;
@@ -28,6 +30,22 @@ const sf::Color color_order[7] = {
     sf::Color(44, 148, 67, 255), // green
     sf::Color(148, 30, 30, 255) // dark red
 };
+
+const float ball_spacing_x = ball_size + 1; //Add for spacing
+const float ball_spacing_y = ball_size*2 - 5; //Subtract for tight fit
+float ball_placement_x = 0.f;
+float ball_placement_y = 0.f;
+int l = 0;
+
+//Randomize values from 0-14
+vector<int> generateShuffledNumbers() {
+    vector<int> numbers(15);
+    for (int i = 0; i < 15; ++i) {
+        numbers[i] = i + 1;
+    }
+    random_shuffle(numbers.begin(), numbers.end()); // Shuffles the numbers
+    return numbers;
+}
 
 // https://www.tutorialspoint.com/check-if-a-line-touches-or-intersects-a-circle-in-cplusplus
 // https://www.jeffreythompson.org/collision-detection/circle-rect.php
@@ -50,6 +68,7 @@ vector<Ball> generate_all_balls(sf::Font *font) {
     // Black 8 ball
     all_balls.push_back(Ball(0.f, (float)ball_size*2, ball_size, ball_mass, false, sf::Color::Black, 8, font));
     return all_balls;
+
 }
 
 Vector2<float> window_position_transform(Vector2<float> position, Vector2<float> translate, float zoom) {
@@ -58,7 +77,9 @@ Vector2<float> window_position_transform(Vector2<float> position, Vector2<float>
 
 int main()
 {
-    // Variables
+    srand(static_cast<unsigned>(time(nullptr))); //Randomize based on time
+    std::vector<int> shuffledNumbers = generateShuffledNumbers();
+
     Vector2<float> drag_start_position;
     Vector2<float> mouse_position;
 
@@ -96,6 +117,26 @@ int main()
     // Testing
     Table table = Table(0.f, 0.f, 2.f, &image);
     vector<Ball> all_balls = generate_all_balls(&font);
+
+    
+    //Creation of Ball Triangle Positioning
+    for(int i=1; i<=5; i++) {
+        for(int k=5-i; k>0; k--) 
+            ball_placement_x = ball_placement_x + ball_spacing_x; //Create spacing
+        for(int j=1; j<=i; j++) {
+            ball_placement_x = ball_placement_x + ball_spacing_x;
+            int nums = shuffledNumbers[l] - 1; //Radomization  Shuffle
+            all_balls[nums+1].position = {ball_placement_x, ball_placement_y}; //Based on spacing position ball into location, use +1 to disregard white ball
+            ball_placement_x = ball_placement_x + ball_spacing_x;
+            l++;
+            //cout << l;
+            
+        }
+
+        ball_placement_y = ball_placement_y + ball_spacing_y; //Tight fit
+        ball_placement_x = 0;
+       
+    }    
 
     // Loop to run the game
     while (window.isOpen())
@@ -180,6 +221,9 @@ int main()
 
         // Drawing
         table.draw(&window);
+
+       
+
 
         for(Ball ball : all_balls) {
             ball.draw(&window);
