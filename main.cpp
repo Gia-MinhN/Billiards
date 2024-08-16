@@ -24,7 +24,7 @@ const sf::Color color_order[7] = {
     sf::Color::Red, 
     sf::Color(76, 17, 171, 255), // purple 
     sf::Color(227, 154, 36, 255), // orange
-    sf::Color(44, 148, 67, 255), // green
+    sf::Color(48, 160, 67, 255), // green
     sf::Color(148, 30, 30, 255) // dark red
 };
 
