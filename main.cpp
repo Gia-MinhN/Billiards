@@ -16,9 +16,6 @@ using namespace std;
 const int window_width = 1000;
 const int window_height = 1000;
 
-
-
-
 const int ball_size = 25;
 const int ball_mass = 100;
 const sf::Color color_order[7] = {
@@ -31,11 +28,6 @@ const sf::Color color_order[7] = {
     sf::Color(148, 30, 30, 255) // dark red
 };
 
-const float ball_spacing_x = ball_size + 1; //Add for spacing
-const float ball_spacing_y = ball_size*2 - 5; //Subtract for tight fit
-float ball_placement_x = 0.f;
-float ball_placement_y = 0.f;
-
 //Randomize values from 0-14
 vector<int> generateShuffledNumbers() {
     vector<int> numbers(15);
@@ -44,10 +36,7 @@ vector<int> generateShuffledNumbers() {
     }
     random_shuffle(numbers.begin(), numbers.end()); // Shuffles the numbers
     return numbers;
-
-    
 }
-
 
 // https://www.tutorialspoint.com/check-if-a-line-touches-or-intersects-a-circle-in-cplusplus
 // https://www.jeffreythompson.org/collision-detection/circle-rect.php
@@ -61,16 +50,20 @@ vector<Ball> generate_all_balls(sf::Font *font) {
     // White ball
     all_balls.push_back(Ball(0.f, 0.f, ball_size, ball_mass, false, WHITE, 0, font));
 
-    // All solid/striped balls
+    // Solid balls
     for(int i = 1; i <= 7; i++) {
-        all_balls.push_back(Ball((float)i*ball_size*2, 0.f, ball_size, ball_mass, false, color_order[i-1], i, font));
-        all_balls.push_back(Ball((float)i*ball_size*2, (float)ball_size*2, ball_size, ball_mass, true, color_order[i-1], i+8, font));
+        all_balls.push_back(Ball(0, 0, ball_size, ball_mass, false, color_order[i-1], i, font));
     }
     
     // Black 8 ball
     all_balls.push_back(Ball(0.f, (float)ball_size*2, ball_size, ball_mass, false, sf::Color::Black, 8, font));
-    return all_balls;
 
+    // Striped balls
+    for(int i = 1; i <= 7; i++) {
+        all_balls.push_back(Ball(0, 0, ball_size, ball_mass, true, color_order[i-1], i+8, font));
+    }
+
+    return all_balls;
 }
 
 Vector2<float> window_position_transform(Vector2<float> position, Vector2<float> translate, float zoom) {
@@ -78,34 +71,45 @@ Vector2<float> window_position_transform(Vector2<float> position, Vector2<float>
 }
 
 //Creation of Ball Triangle Positioning
-int triangle(float ball_placement_x, float ball_placement_y, float ball_spacing_x, float ball_spacing_y, vector<Ball>* all_balls) {
-    int l = 0;
+void triangle(float x, float y, vector<Ball>* all_balls) {
+    int index = 0;
+    float ball_spacing_x = ball_size;
+    float ball_spacing_y = -sinf(PI*2/3)*ball_size*2;
+
     srand(static_cast<unsigned>(time(nullptr))); //Randomize based on time
     vector<int> shuffledNumbers = generateShuffledNumbers();
-    for(int i=1; i<=5; i++) {
-        for(int k=5-i; k>0; k--) 
-            ball_placement_x = ball_placement_x + ball_spacing_x; //Create spacing
-        for(int j=1; j<=i; j++) {
-            ball_placement_x = ball_placement_x + ball_spacing_x;
-            int nums = shuffledNumbers[l] - 1; //Radomization  Shuffle
-            (*all_balls)[nums+1].position = {ball_placement_x, ball_placement_y}; //Based on spacing position ball into location, use +1 to disregard white ball
-            ball_placement_x = ball_placement_x + ball_spacing_x;
-            l++;
-            //cout << l;
-            
+
+    // Swap 8-ball to center
+    int eight_ball_index;
+    for(eight_ball_index = 0; eight_ball_index < shuffledNumbers.size(); eight_ball_index++) {
+        if(shuffledNumbers[eight_ball_index] == 8) 
+            break;
+    }
+    int tmp = shuffledNumbers[4];
+    shuffledNumbers[4] = shuffledNumbers[eight_ball_index];
+    shuffledNumbers[eight_ball_index] = tmp;
+
+    float x_cur = x - 5*ball_size;
+    float y_cur = y;
+
+    for(int i = 1; i <= 5; i++) {
+        for(int k = 5 - i; k > 0; k--) {
+            x_cur += ball_spacing_x; //Create spacing
+        }
+        for(int j = 1; j <= i; j++) {
+            x_cur += ball_spacing_x;
+            (*all_balls)[shuffledNumbers[index]].position = {x_cur, y_cur}; //Based on spacing position ball into location
+            x_cur += ball_spacing_x;
+            index++;
         }
 
-        ball_placement_y = ball_placement_y + ball_spacing_y; //Tight fit
-        ball_placement_x = 0;
-       
+        y_cur += ball_spacing_y;
+        x_cur = x - 5*ball_size;
     }
-    return 0;
 }
 
 int main()
 {
-    
-
     Vector2<float> drag_start_position;
     Vector2<float> mouse_position;
 
@@ -143,8 +147,7 @@ int main()
     // Testing
     Table table = Table(0.f, 0.f, 2.f, &image);
     vector<Ball> all_balls = generate_all_balls(&font);
-
-    triangle(ball_placement_x,ball_placement_y,ball_spacing_x,ball_spacing_y, &all_balls);
+    triangle(0, -300, &all_balls);
     
 
     // Loop to run the game
