@@ -35,7 +35,6 @@ const float ball_spacing_x = ball_size + 1; //Add for spacing
 const float ball_spacing_y = ball_size*2 - 5; //Subtract for tight fit
 float ball_placement_x = 0.f;
 float ball_placement_y = 0.f;
-int l = 0;
 
 //Randomize values from 0-14
 vector<int> generateShuffledNumbers() {
@@ -45,7 +44,10 @@ vector<int> generateShuffledNumbers() {
     }
     random_shuffle(numbers.begin(), numbers.end()); // Shuffles the numbers
     return numbers;
+
+    
 }
+
 
 // https://www.tutorialspoint.com/check-if-a-line-touches-or-intersects-a-circle-in-cplusplus
 // https://www.jeffreythompson.org/collision-detection/circle-rect.php
@@ -75,10 +77,34 @@ Vector2<float> window_position_transform(Vector2<float> position, Vector2<float>
     return ((position - Vector2<float>{(float)window_width/2, (float)window_height/2})/zoom + translate);
 }
 
+//Creation of Ball Triangle Positioning
+int triangle(float ball_placement_x, float ball_placement_y, float ball_spacing_x, float ball_spacing_y, vector<Ball>* all_balls) {
+    int l = 0;
+    srand(static_cast<unsigned>(time(nullptr))); //Randomize based on time
+    vector<int> shuffledNumbers = generateShuffledNumbers();
+    for(int i=1; i<=5; i++) {
+        for(int k=5-i; k>0; k--) 
+            ball_placement_x = ball_placement_x + ball_spacing_x; //Create spacing
+        for(int j=1; j<=i; j++) {
+            ball_placement_x = ball_placement_x + ball_spacing_x;
+            int nums = shuffledNumbers[l] - 1; //Radomization  Shuffle
+            (*all_balls)[nums+1].position = {ball_placement_x, ball_placement_y}; //Based on spacing position ball into location, use +1 to disregard white ball
+            ball_placement_x = ball_placement_x + ball_spacing_x;
+            l++;
+            //cout << l;
+            
+        }
+
+        ball_placement_y = ball_placement_y + ball_spacing_y; //Tight fit
+        ball_placement_x = 0;
+       
+    }
+    return 0;
+}
+
 int main()
 {
-    srand(static_cast<unsigned>(time(nullptr))); //Randomize based on time
-    std::vector<int> shuffledNumbers = generateShuffledNumbers();
+    
 
     Vector2<float> drag_start_position;
     Vector2<float> mouse_position;
@@ -118,25 +144,8 @@ int main()
     Table table = Table(0.f, 0.f, 2.f, &image);
     vector<Ball> all_balls = generate_all_balls(&font);
 
+    triangle(ball_placement_x,ball_placement_y,ball_spacing_x,ball_spacing_y, &all_balls);
     
-    //Creation of Ball Triangle Positioning
-    for(int i=1; i<=5; i++) {
-        for(int k=5-i; k>0; k--) 
-            ball_placement_x = ball_placement_x + ball_spacing_x; //Create spacing
-        for(int j=1; j<=i; j++) {
-            ball_placement_x = ball_placement_x + ball_spacing_x;
-            int nums = shuffledNumbers[l] - 1; //Radomization  Shuffle
-            all_balls[nums+1].position = {ball_placement_x, ball_placement_y}; //Based on spacing position ball into location, use +1 to disregard white ball
-            ball_placement_x = ball_placement_x + ball_spacing_x;
-            l++;
-            //cout << l;
-            
-        }
-
-        ball_placement_y = ball_placement_y + ball_spacing_y; //Tight fit
-        ball_placement_x = 0;
-       
-    }    
 
     // Loop to run the game
     while (window.isOpen())
