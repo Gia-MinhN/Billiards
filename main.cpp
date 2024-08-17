@@ -16,7 +16,7 @@ using namespace std;
 const int window_width = 1000;
 const int window_height = 1000;
 
-const int ball_size = 25;
+const int ball_size = 50;
 const int ball_mass = 100;
 const sf::Color color_order[7] = {
     sf::Color(227, 211, 36, 255), // yellow 
@@ -141,11 +141,11 @@ int main()
 
     // Image
     sf::Image image;
-    image.loadFromFile("pool_table.jpg");
+    image.loadFromFile("pool_table.png");
     
 
     // Testing
-    Table table = Table(0.f, 0.f, 2.f, &image);
+    Table table = Table(0.f, 0.f, 2.f, 0.f, 0.f, 0.f, &image);
     vector<Ball> all_balls = generate_all_balls(&font);
     triangle(0, -300, &all_balls);
     

@@ -69,6 +69,7 @@ class Ball {
     sf::ConvexShape stripe;
     sf::CircleShape small_circle;
     sf::Text number_label;
+    sf::CircleShape outline;
 
 
     //Constructors
@@ -111,12 +112,19 @@ class Ball {
 
         number_label.setString(to_string(number));
         number_label.setCharacterSize(radius/2);
-        number_label.setStyle(sf::Text::Bold);
+        // number_label.setStyle(sf::Text::Bold);
         number_label.setFillColor(sf::Color::Black);
         number_label.setFont(*font);
         auto center = number_label.getGlobalBounds().getSize() / 2.f;
         auto localBounds = center + number_label.getLocalBounds().getPosition();
         number_label.setOrigin(localBounds);
+
+        outline.setRadius(radius-.5f);
+        outline.setOrigin(radius-.5f, radius-.5f);
+        outline.setPointCount(120);
+        outline.setFillColor(sf::Color(255, 255, 255, 0));
+        outline.setOutlineThickness(1);
+        outline.setOutlineColor(sf::Color::Black);
     }
 
     // Methods
@@ -135,6 +143,9 @@ class Ball {
 
             number_label.setPosition((int)position.x, (int)position.y);
             window->draw(number_label);
+
+            outline.setPosition(position.x, position.y);
+            window->draw(outline);
         }
     }
 
@@ -165,7 +176,9 @@ class Table {
     sf::Sprite sprite;
 
     public:
-    Table(float x, float y, float scale, sf::Image *image) {
+    Vector2<float> holes[];
+
+    Table(float x, float y, float scale, float hole_x, float hole_y, float hole_radius, sf::Image *image) {
         texture.loadFromImage(*image);
         texture.setSmooth(true);
 
