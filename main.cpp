@@ -16,7 +16,7 @@ using namespace std;
 const int window_width = 1000;
 const int window_height = 1000;
 
-const int ball_size = 50;
+const int ball_size = 25;
 const int ball_mass = 100;
 const sf::Color color_order[7] = {
     sf::Color(227, 211, 36, 255), // yellow 
@@ -52,15 +52,15 @@ vector<Ball> generate_all_balls(sf::Font *font) {
 
     // Solid balls
     for(int i = 1; i <= 7; i++) {
-        all_balls.push_back(Ball(0, 0, ball_size, ball_mass, false, color_order[i-1], i, font));
+        all_balls.push_back(Ball(0.f, 0.f, ball_size, ball_mass, false, color_order[i-1], i, font));
     }
     
     // Black 8 ball
-    all_balls.push_back(Ball(0.f, (float)ball_size*2, ball_size, ball_mass, false, sf::Color::Black, 8, font));
+    all_balls.push_back(Ball(0.f, 0.f, ball_size, ball_mass, false, sf::Color::Black, 8, font));
 
     // Striped balls
     for(int i = 1; i <= 7; i++) {
-        all_balls.push_back(Ball(0, 0, ball_size, ball_mass, true, color_order[i-1], i+8, font));
+        all_balls.push_back(Ball(0.f, 0.f, ball_size, ball_mass, true, color_order[i-1], i+8, font));
     }
 
     return all_balls;
@@ -141,11 +141,11 @@ int main()
 
     // Image
     sf::Image image;
-    image.loadFromFile("pool_table.png");
+    image.loadFromFile("pool_table_nobg.png");
     
 
     // Testing
-    Table table = Table(0.f, 0.f, 2.f, 0.f, 0.f, 0.f, &image);
+    Table table = Table({0.f, 0.f}, 1.f, {423.5f, -834.5f}, {475.f, 0.f}, ball_size*2, &image);
     vector<Ball> all_balls = generate_all_balls(&font);
     triangle(0, -300, &all_balls);
     
@@ -228,15 +228,11 @@ int main()
             view.setCenter(translate.x, translate.y);
         }
         // Reset wimndow
-        window.clear(sf::Color(50, 100, 100, 255));
+        window.clear(sf::Color(50, 150, 150, 255));
         window.setView(view);
 
         // Drawing
         table.draw(&window);
-
-       
-
-
         for(Ball ball : all_balls) {
             ball.draw(&window);
         }

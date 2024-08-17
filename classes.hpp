@@ -112,18 +112,18 @@ class Ball {
 
         number_label.setString(to_string(number));
         number_label.setCharacterSize(radius/2);
-        // number_label.setStyle(sf::Text::Bold);
+        number_label.setStyle(sf::Text::Bold);
         number_label.setFillColor(sf::Color::Black);
         number_label.setFont(*font);
         auto center = number_label.getGlobalBounds().getSize() / 2.f;
         auto localBounds = center + number_label.getLocalBounds().getPosition();
         number_label.setOrigin(localBounds);
 
-        outline.setRadius(radius-.5f);
-        outline.setOrigin(radius-.5f, radius-.5f);
+        outline.setRadius(radius-1);
+        outline.setOrigin(radius-1, radius-1);
         outline.setPointCount(120);
         outline.setFillColor(sf::Color(255, 255, 255, 0));
-        outline.setOutlineThickness(1);
+        outline.setOutlineThickness(2);
         outline.setOutlineColor(sf::Color::Black);
     }
 
@@ -176,21 +176,46 @@ class Table {
     sf::Sprite sprite;
 
     public:
-    Vector2<float> holes[];
+    vector<Vector2<float>> hole_position;
+    vector<sf::CircleShape> holes;
+    float hole_radius;
 
-    Table(float x, float y, float scale, float hole_x, float hole_y, float hole_radius, sf::Image *image) {
+    Table(Vector2<float> pos, float scale, Vector2<float> corner_hole, Vector2<float> side_hole, float hole_r, sf::Image *image) {
         texture.loadFromImage(*image);
         texture.setSmooth(true);
 
         sprite.setTexture(texture);
         sprite.setOrigin(sprite.getLocalBounds().width/2, sprite.getLocalBounds().height/2);
-        sprite.setPosition(x, y);
+        sprite.setPosition(pos.x, pos.y);
         sprite.setScale(scale, scale);
-        sprite.setRotation(90);
+        // sprite.setRotation(90);
+
+        hole_radius = hole_r;
+
+        hole_position.push_back(corner_hole);
+        hole_position.push_back(corner_hole*Vector2<float>{-1.f, 1.f});
+        hole_position.push_back(corner_hole*Vector2<float>{1.f, -1.f});
+        hole_position.push_back(corner_hole*Vector2<float>{-1.f, -1.f});
+
+        hole_position.push_back(side_hole);
+        hole_position.push_back(side_hole*Vector2<float>{-1.f, 1.f});
+
+        for(auto pos : hole_position) {
+            sf::CircleShape hole;
+            hole.setRadius(hole_radius);
+            hole.setOrigin(hole_radius, hole_radius);
+            hole.setPosition(pos.x, pos.y);
+            hole.setFillColor(sf::Color::Black);
+            holes.push_back(hole);
+        }
     }
 
     void draw(sf::RenderWindow *window) {
         window->draw(sprite);
+
+        for(auto hole : holes) {
+            window->draw(hole);
+        }
     }
 };
 
