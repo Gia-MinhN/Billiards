@@ -67,7 +67,7 @@ vector<Ball> generate_all_balls(sf::Font *font) {
 }
 
 Vector2<float> window_position_transform(Vector2<float> position, Vector2<float> translate, float zoom) {
-    return ((position - Vector2<float>{(float)window_width/2, (float)window_height/2})/zoom + translate);
+    return ((position - Vector2<float>{(float)window_width/2, (float)window_height/2})*zoom + translate);
 }
 
 //Creation of Ball Triangle Positioning
@@ -114,7 +114,7 @@ int main()
     Vector2<float> mouse_position;
 
     Vector2<float> translate  = {0.f, 0.f};
-    float          zoom       = .5f;
+    float          zoom       = 4.f;
     bool           lmb_toggle = false;
     bool           rmb_toggle = false;
 
@@ -129,7 +129,7 @@ int main()
     sf::View view;
     view.setSize(window_width, window_height);
     view.setCenter(0, 0);
-    view.setSize(window_width/zoom, window_height/zoom);
+    view.setSize(window_width*zoom, window_height*zoom);
     window.setView(view);
 
     // Clock
@@ -164,10 +164,10 @@ int main()
                     break;
                 }
                 case sf::Event::MouseWheelMoved: {
-                    zoom += event.mouseWheel.delta/10.f;
+                    zoom -= event.mouseWheel.delta/10.f;
                     zoom = max(.5f, zoom);
-                    zoom = min(3.f, zoom);
-                    view.setSize(window_width/zoom, window_height/zoom);
+                    zoom = min(5.f, zoom);
+                    view.setSize(window_width*zoom, window_height*zoom);
                     break;
                 }
                 case sf::Event::MouseButtonPressed: {
@@ -203,9 +203,9 @@ int main()
                             break;
                         }
                         case sf::Keyboard::R: {
-                            zoom = .5f;
+                            zoom = 4.f;
                             translate = {0, 0};
-                            view.setSize(window_width/zoom, window_height/zoom);
+                            view.setSize(window_width*zoom, window_height*zoom);
                             view.setCenter(0, 0);
                             break;
                         }
@@ -228,7 +228,7 @@ int main()
             view.setCenter(translate.x, translate.y);
         }
         // Reset wimndow
-        window.clear();
+        window.clear(sf::Color(50, 100, 100, 255));
         window.setView(view);
 
         // Drawing
