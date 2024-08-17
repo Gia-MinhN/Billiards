@@ -10,6 +10,8 @@
 
 using namespace std;
 
+// Vector and functions
+
 template<class T>
 struct Vector2 {
     T x, y;
@@ -55,22 +57,49 @@ struct Vector2 {
     }
 };
 
+float distance(Vector2<float> a, Vector2<float> b) {
+    return sqrt(pow((b.x - a.x), 2) + pow((b.y - a.y), 2));
+}
+
+float magnitude(Vector2<float> vect) {
+    return sqrt(pow(vect.x, 2) + pow(vect.y, 2));
+}
+
+Vector2<float> unit(Vector2<float> vect){
+    if(vect.x == 0 && vect.y == 0) {
+        return {0, 0};
+    }
+    return vect/magnitude(vect);
+}
+
+float angle(Vector2<float> a, Vector2<float> b) {
+    return atan2(a.y - b.y, a.x - b.x);
+}
+
+float dot(Vector2<float> a, Vector2<float> b) {
+    return a.x*b.x + a.y*b.y;
+}
+
+Vector2<float> reflect(Vector2<float> vect, Vector2<float> norm) {
+    return (vect - norm*2*dot(norm, vect));
+}
+
+// Classes
+
 class Ball {
-    public:
-
-    // Variables
-    Vector2<float>    position, velocity;
-    float             radius, mass;
-    bool              is_striped;
-    sf::Color         color;
-    int               number;
-
+    private:
     sf::CircleShape back;
     sf::ConvexShape stripe;
     sf::CircleShape small_circle;
     sf::Text number_label;
     sf::CircleShape outline;
 
+    public:
+    Vector2<float>    position, velocity;
+    float             radius, mass;
+    bool              is_striped;
+    sf::Color         color;
+    int               number;
 
     //Constructors
     Ball(float x, float y, float r, float m, bool striped, sf::Color col, int num, sf::Font *font) {
@@ -150,7 +179,7 @@ class Ball {
     }
 
     void update(float dt) {
-
+        
     }
 };
 
@@ -220,18 +249,28 @@ class Table {
 };
 
 class Line {
+    private:
+    sf::RectangleShape line;
+
     public:
     Vector2<float> p1, p2, normal;
+    float length;
 
     Line(Vector2<float> point1, Vector2<float> point2) {
         p1 = point1;
         p2 = point2;
-        setupNormal();
+        normal = Vector2<float>{-(p2.y - p1.y), p2.x - p1.x};
+        length = distance(p1, p2);
+
+        line.setSize(sf::Vector2f(distance(p1, p2), 8));
+        line.setOrigin(0, 4);
+        line.setPosition(p1.x, p1.y);
+        line.setRotation(angle(p1, p2)*180.f/PI+180);
+        line.setFillColor(sf::Color(255, 0, 0, 75));
     }
 
-    Vector2<float> setupNormal() {
-        normal = Vector2<float>{-(p2.y - p1.y), p2.x - p1.x};
-        return normal;
+    void draw(sf::RenderWindow *window) {
+        window->draw(line);
     }
 };
 

@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <thread>
 #include <SFML/Graphics.hpp>
-#include "vector_functions.hpp"
 #include "classes.hpp"
 
 using namespace std;
@@ -18,6 +17,7 @@ const int window_height = 1000;
 
 const int ball_size = 25;
 const int ball_mass = 100;
+const float line_distance = 422;
 const sf::Color color_order[7] = {
     sf::Color(227, 211, 36, 255), // yellow 
     sf::Color::Blue, 
@@ -27,6 +27,38 @@ const sf::Color color_order[7] = {
     sf::Color(48, 160, 67, 255), // green
     sf::Color(148, 30, 30, 255) // dark red
 };
+Vector2<float> line_points[] = {
+    // Top
+    {-417.f, -906.f}, {-347.f, -838.f},
+    {-347.f, -838.f}, {347.f, -838.f},
+    {347.f, -838.f}, {417.f, -906.f},
+
+    // Bottom
+    {417.f, 906.f}, {347.f, 838.f},
+    {347.f, 838.f}, {-347.f, 838.f},
+    {-347.f, 838.f}, {-417.f, 906.f},
+
+    // Lower Left
+    {-495.f, 828.f}, {-425.f, 760.f},
+    {-425.f, 760.f}, {-425.f, 60.f},
+    {-425.f, 60.f}, {-460.f, 47.f},
+
+    // Upper Left
+    {-460.f, -47.f}, {-425.f, -60.f},
+    {-425.f, -60.f}, {-425.f, -760.f},
+    {-425.f, -760.f}, {-495.f, -828.f},
+
+    // Upper Right
+    {495.f, -828.f}, {425.f, -760.f},
+    {425.f, -760.f}, {425.f, -60.f}, 
+    {425.f, -60.f}, {460.f, -47.f}, 
+
+    // Lower Right
+    {460.f, 47.f}, {425.f, 60.f}, 
+    {425.f, 60.f}, {425.f, 760.f}, 
+    {425.f, 760.f}, {495.f, 828.f}
+};
+
 
 //Randomize values from 0-14
 vector<int> generateShuffledNumbers() {
@@ -142,13 +174,21 @@ int main()
     // Image
     sf::Image image;
     image.loadFromFile("pool_table_nobg.png");
-    
 
-    // Testing
+    // Ball setup
     Table table = Table({0.f, 0.f}, 1.f, {423.5f, -834.5f}, {475.f, 0.f}, ball_size*2, &image);
     vector<Ball> all_balls = generate_all_balls(&font);
-    triangle(0, -300, &all_balls);
+    triangle(0, -422, &all_balls);
+    all_balls[0].position = {0, line_distance};
     
+    // Line setup
+    vector<Line> all_lines;
+    for(int i = 0; i < size(line_points); i += 2) {
+        all_lines.push_back(Line(line_points[i], line_points[i+1]));
+    }
+
+    // Testing
+    Ball test_ball = Ball(0.f, 0.f, ball_size, ball_mass, false, sf::Color(255, 255, 255, 150), 999, &font);
 
     // Loop to run the game
     while (window.isOpen())
@@ -220,6 +260,11 @@ int main()
                 }
             }
         }
+        if(lmb_toggle) {
+            sf::Vector2i tmp = sf::Mouse::getPosition(window);
+            mouse_position = window_position_transform({(float)tmp.x, (float)tmp.y}, translate, zoom);
+            test_ball.position = mouse_position;
+        }
 
         if(rmb_toggle) {
             sf::Vector2i tmp = sf::Mouse::getPosition(window);
@@ -227,7 +272,7 @@ int main()
             translate = drag_start_position - mouse_position;
             view.setCenter(translate.x, translate.y);
         }
-        // Reset wimndow
+        // Reset window
         window.clear(sf::Color(50, 150, 150, 255));
         window.setView(view);
 
@@ -235,6 +280,10 @@ int main()
         table.draw(&window);
         for(Ball ball : all_balls) {
             ball.draw(&window);
+        }
+        test_ball.draw(&window);
+        for(Line line : all_lines) {
+            line.draw(&window);
         }
 
         // Display
