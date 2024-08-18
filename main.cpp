@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <thread>
 #include <SFML/Graphics.hpp>
-#include "vector_functions.hpp"
 #include "classes.hpp"
 
 using namespace std;
@@ -16,8 +15,12 @@ using namespace std;
 const int window_width = 1000;
 const int window_height = 1000;
 
+const int sub_updates = 4;
+
 const int ball_size = 25;
 const int ball_mass = 100;
+const float friction = 500.f;
+const float line_distance = 422;
 const sf::Color color_order[7] = {
     sf::Color(227, 211, 36, 255), // yellow 
     sf::Color::Blue, 
@@ -27,6 +30,38 @@ const sf::Color color_order[7] = {
     sf::Color(48, 160, 67, 255), // green
     sf::Color(148, 30, 30, 255) // dark red
 };
+Vector2<float> line_points[] = {
+    // Top
+    {-417.f, -906.f}, {-347.f, -838.f},
+    {-347.f, -838.f}, {347.f, -838.f},
+    {347.f, -838.f}, {417.f, -906.f},
+
+    // Bottom
+    {417.f, 906.f}, {347.f, 838.f},
+    {347.f, 838.f}, {-347.f, 838.f},
+    {-347.f, 838.f}, {-417.f, 906.f},
+
+    // Lower Left
+    {-495.f, 828.f}, {-425.f, 760.f},
+    {-425.f, 760.f}, {-425.f, 60.f},
+    {-425.f, 60.f}, {-460.f, 47.f},
+
+    // Upper Left
+    {-460.f, -47.f}, {-425.f, -60.f},
+    {-425.f, -60.f}, {-425.f, -760.f},
+    {-425.f, -760.f}, {-495.f, -828.f},
+
+    // Upper Right
+    {495.f, -828.f}, {425.f, -760.f},
+    {425.f, -760.f}, {425.f, -60.f}, 
+    {425.f, -60.f}, {460.f, -47.f}, 
+
+    // Lower Right
+    {460.f, 47.f}, {425.f, 60.f}, 
+    {425.f, 60.f}, {425.f, 760.f}, 
+    {425.f, 760.f}, {495.f, 828.f}
+};
+
 
 //Randomize values from 0-14
 vector<int> generateShuffledNumbers() {
@@ -38,29 +73,26 @@ vector<int> generateShuffledNumbers() {
     return numbers;
 }
 
-// https://www.tutorialspoint.com/check-if-a-line-touches-or-intersects-a-circle-in-cplusplus
-// https://www.jeffreythompson.org/collision-detection/circle-rect.php
-
 bool within_ball(Vector2<float> position, Ball ball) {
     return distance(position, ball.position) <= ball_size;
 }
 
-vector<Ball> generate_all_balls(sf::Font *font) {
-    vector<Ball> all_balls;
+vector<Ball*> generate_all_balls(sf::Font *font) {
+    vector<Ball*> all_balls;
     // White ball
-    all_balls.push_back(Ball(0.f, 0.f, ball_size, ball_mass, false, WHITE, 0, font));
+    all_balls.push_back(new Ball(0.f, 0.f, ball_size, ball_mass, friction, false, WHITE, 0, font));
 
     // Solid balls
     for(int i = 1; i <= 7; i++) {
-        all_balls.push_back(Ball(0.f, 0.f, ball_size, ball_mass, false, color_order[i-1], i, font));
+        all_balls.push_back(new Ball(0.f, 0.f, ball_size, ball_mass, friction, false, color_order[i-1], i, font));
     }
     
     // Black 8 ball
-    all_balls.push_back(Ball(0.f, 0.f, ball_size, ball_mass, false, sf::Color::Black, 8, font));
+    all_balls.push_back(new Ball(0.f, 0.f, ball_size, ball_mass, friction, false, sf::Color::Black, 8, font));
 
     // Striped balls
     for(int i = 1; i <= 7; i++) {
-        all_balls.push_back(Ball(0.f, 0.f, ball_size, ball_mass, true, color_order[i-1], i+8, font));
+        all_balls.push_back(new Ball(0.f, 0.f, ball_size, ball_mass, friction, true, color_order[i-1], i+8, font));
     }
 
     return all_balls;
@@ -71,7 +103,7 @@ Vector2<float> window_position_transform(Vector2<float> position, Vector2<float>
 }
 
 //Creation of Ball Triangle Positioning
-void triangle(float x, float y, vector<Ball>* all_balls) {
+void triangle(float x, float y, vector<Ball*> *all_balls) {
     int index = 0;
     float ball_spacing_x = ball_size;
     float ball_spacing_y = -sinf(PI*2/3)*ball_size*2;
@@ -98,13 +130,48 @@ void triangle(float x, float y, vector<Ball>* all_balls) {
         }
         for(int j = 1; j <= i; j++) {
             x_cur += ball_spacing_x;
-            (*all_balls)[shuffledNumbers[index]].position = {x_cur, y_cur}; //Based on spacing position ball into location
+            (*all_balls)[shuffledNumbers[index]]->position = {x_cur, y_cur}; //Based on spacing position ball into location
             x_cur += ball_spacing_x;
             index++;
         }
 
         y_cur += ball_spacing_y;
         x_cur = x - 5*ball_size;
+    }
+}
+
+bool none_moving(vector<Ball*> *all_balls) {
+    for(auto ball : *all_balls) {
+        if(ball->is_moving()) return false;
+    }
+    return true;
+}
+
+void ball_line_collision(Ball *ball, Line *line) {
+    ball->velocity = reflect(ball->velocity, line->normal);
+}
+
+void check_ball_line_collision(vector<Ball*> *all_balls, vector<Line*> *all_lines) {
+    for(auto ball : (*all_balls)) {
+        for(auto line : (*all_lines)) {
+            if(line->collision(ball->position, ball->radius)) {
+                ball_line_collision(ball, line);
+            }
+        }
+    }
+}
+
+void sub_update(vector<Ball*> *all_balls, float dt) {
+    for(auto ball : *all_balls) {
+        ball->update(dt);
+    }
+}
+
+void update(vector<Ball*> *all_balls, vector<Line*> *all_lines, float dt) {
+    float sub_dt = dt / sub_updates;
+    for(int i = 0; i < sub_updates; i++) {
+        sub_update(all_balls, sub_dt);
+        check_ball_line_collision(all_balls, all_lines);
     }
 }
 
@@ -142,13 +209,23 @@ int main()
     // Image
     sf::Image image;
     image.loadFromFile("pool_table_nobg.png");
+
+    // Ball setup
+    Table table = Table({0.f, 0.f}, 1.f, {423.5f, -834.5f}, {475.f, 0.f}, ball_size*2, &image);
+    vector<Ball*> all_balls = generate_all_balls(&font);
+    triangle(0, -422, &all_balls);
+    all_balls[0]->position = {0, line_distance};
     
+    // Line setup
+    vector<Line*> all_lines;
+    for(int i = 0; i < size(line_points); i += 2) {
+        all_lines.push_back(new Line(line_points[i], line_points[i+1]));
+    }
 
     // Testing
-    Table table = Table({0.f, 0.f}, 1.f, {423.5f, -834.5f}, {475.f, 0.f}, ball_size*2, &image);
-    vector<Ball> all_balls = generate_all_balls(&font);
-    triangle(0, -300, &all_balls);
-    
+    // Ball test_ball = Ball(0.f, 0.f, ball_size, ball_mass, false, sf::Color(255, 255, 255, 150), 999, &font);
+    // all_balls.push_back(test_ball);
+    all_balls[0]->velocity = Vector2<float>{0.f, -2500.f};
 
     // Loop to run the game
     while (window.isOpen())
@@ -220,26 +297,42 @@ int main()
                 }
             }
         }
-
         if(rmb_toggle) {
             sf::Vector2i tmp = sf::Mouse::getPosition(window);
             mouse_position = window_position_transform({(float)tmp.x, (float)tmp.y}, {0, 0}, zoom);
             translate = drag_start_position - mouse_position;
             view.setCenter(translate.x, translate.y);
         }
-        // Reset wimndow
+
+        // Updates
+        float dt = clock.restart().asSeconds();
+        update(&all_balls, &all_lines, dt);
+
+        // Reset window
         window.clear(sf::Color(50, 150, 150, 255));
         window.setView(view);
 
         // Drawing
         table.draw(&window);
-        for(Ball ball : all_balls) {
-            ball.draw(&window);
+        for(Ball* ball : all_balls) {
+            ball->draw(&window);
+        }
+        // test_ball.draw(&window);
+        for(Line* line : all_lines) {
+            line->draw(&window);
         }
 
         // Display
         window.display();   
     }
 
+
+    // Clean up
+    for(auto ball : all_balls) {
+        delete ball;
+    }
+    for(auto line : all_lines) {
+        delete line;
+    }
     return 0;
 }
