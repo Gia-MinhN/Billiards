@@ -8,6 +8,12 @@
 #define PI 3.14159265359
 #define WHITE sf::Color(237, 237, 223, 255)
 
+enum collision_type {
+    NORMAL,
+    END,
+    NO_COLLISION
+};
+
 using namespace std;
 
 // Vector and functions
@@ -97,16 +103,18 @@ class Ball {
     public:
     Vector2<float>    position, velocity;
     float             radius, mass;
+    float             friction;
     bool              is_striped;
     sf::Color         color;
     int               number;
 
     //Constructors
-    Ball(float x, float y, float r, float m, bool striped, sf::Color col, int num, sf::Font *font) {
+    Ball(float x, float y, float r, float m, float f, bool striped, sf::Color col, int num, sf::Font *font) {
         position = Vector2<float>{x, y};
         velocity = Vector2<float>{0, 0};
         radius = r;
         mass = m;
+        friction = f;
         is_striped = striped;
         color = col;
         number = num;
@@ -157,6 +165,18 @@ class Ball {
     }
 
     // Methods
+    bool is_moving() {
+        return magnitude(velocity) <= 0.001;
+    }
+
+    void update(float dt) {
+        Vector2<float> dir = unit(velocity)*-1;
+        Vector2<float> acceleration = dir*friction;
+        position = position + velocity*dt + acceleration*dt*dt/2.f;
+        velocity = velocity + acceleration*dt;
+    }
+
+
     void draw(sf::RenderWindow *window) {
         back.setPosition(position.x, position.y);
         window->draw(back);
@@ -176,10 +196,6 @@ class Ball {
             outline.setPosition(position.x, position.y);
             window->draw(outline);
         }
-    }
-
-    void update(float dt) {
-        
     }
 };
 
@@ -259,7 +275,7 @@ class Line {
     Line(Vector2<float> point1, Vector2<float> point2) {
         p1 = point1;
         p2 = point2;
-        normal = Vector2<float>{-(p2.y - p1.y), p2.x - p1.x};
+        normal = unit(Vector2<float>{-(p2.y - p1.y), p2.x - p1.x});
         length = distance(p1, p2);
 
         line.setSize(sf::Vector2f(distance(p1, p2), 8));
@@ -267,6 +283,17 @@ class Line {
         line.setPosition(p1.x, p1.y);
         line.setRotation(angle(p1, p2)*180.f/PI+180);
         line.setFillColor(sf::Color(255, 0, 0, 75));
+    }
+    
+    // https://www.youtube.com/watch?v=h1WXaa2UwLQ
+    bool collision(Vector2<float> pos, float radius) {
+        float dot_product = dot(pos - p1, p2 - p1) / (length*length);
+        Vector2<float> closest = p1 + (p2-p1)*dot_product;
+
+        if(distance(pos, p1) <= radius || distance(pos, p2) <= radius) return true;
+        if(distance(closest, p1) + distance(closest, p2) - 1 > length) return false;
+        if(distance(pos, closest) <= radius) return true;
+        return false;
     }
 
     void draw(sf::RenderWindow *window) {
