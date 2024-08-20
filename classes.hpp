@@ -166,14 +166,17 @@ class Ball {
 
     // Methods
     bool is_moving() {
-        return magnitude(velocity) <= 0.001;
+        return magnitude(velocity) >= 10.f;
     }
 
-    void update(float dt) {
-        Vector2<float> dir = unit(velocity)*-1;
-        Vector2<float> acceleration = dir*friction;
+    void update(float dt) {        
+        Vector2<float> acceleration = velocity*friction*-1;
         position = position + velocity*dt + acceleration*dt*dt/2.f;
         velocity = velocity + acceleration*dt;
+
+        if(magnitude(velocity) < 10.f) {
+            velocity = Vector2<float>{0.f, 0.f};
+        }
     }
 
 

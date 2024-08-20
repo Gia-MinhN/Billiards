@@ -19,7 +19,8 @@ const int sub_updates = 4;
 
 const int ball_size = 25;
 const int ball_mass = 100;
-const float friction = 500.f;
+const float friction = 1.f;
+const float power_multiplier = 1.f;
 const float line_distance = 422;
 const sf::Color color_order[7] = {
     sf::Color(227, 211, 36, 255), // yellow 
@@ -30,7 +31,7 @@ const sf::Color color_order[7] = {
     sf::Color(48, 160, 67, 255), // green
     sf::Color(148, 30, 30, 255) // dark red
 };
-Vector2<float> line_points[] = {
+const Vector2<float> line_points[] = {
     // Top
     {-417.f, -906.f}, {-347.f, -838.f},
     {-347.f, -838.f}, {347.f, -838.f},
@@ -61,17 +62,13 @@ Vector2<float> line_points[] = {
     {425.f, 60.f}, {425.f, 760.f}, 
     {425.f, 760.f}, {495.f, 828.f}
 };
-
-
-//Randomize values from 0-14
-vector<int> generateShuffledNumbers() {
-    vector<int> numbers(15);
-    for (int i = 0; i < 15; ++i) {
-        numbers[i] = i + 1;
-    }
-    random_shuffle(numbers.begin(), numbers.end()); // Shuffles the numbers
-    return numbers;
-}
+const int triangle_ordering[15] = {
+        1,
+      0,  1, 
+    1,  8,  0,
+  0,  1,  0,  1,
+1,  0,  0,  1,  0
+};
 
 bool within_ball(Vector2<float> position, Ball ball) {
     return distance(position, ball.position) <= ball_size;
@@ -109,17 +106,31 @@ void triangle(float x, float y, vector<Ball*> *all_balls) {
     float ball_spacing_y = -sinf(PI*2/3)*ball_size*2;
 
     srand(static_cast<unsigned>(time(nullptr))); //Randomize based on time
-    vector<int> shuffledNumbers = generateShuffledNumbers();
 
-    // Swap 8-ball to center
-    int eight_ball_index;
-    for(eight_ball_index = 0; eight_ball_index < shuffledNumbers.size(); eight_ball_index++) {
-        if(shuffledNumbers[eight_ball_index] == 8) 
-            break;
+    vector<int> solid = {1, 2, 3, 4, 5, 6, 7};
+    random_shuffle(solid.begin(), solid.end());
+    vector<int> striped = {9, 10, 11, 12, 13, 14, 15};
+    random_shuffle(striped.begin(), striped.end());
+
+    vector<int> shuffledNumbers;
+    for(int i : triangle_ordering) {
+        switch(i) {
+            case 0: {
+                shuffledNumbers.push_back(solid.back());
+                solid.pop_back();
+                break;
+            }
+            case 1: {
+                shuffledNumbers.push_back(striped.back());
+                striped.pop_back();
+                break;
+            }
+            default: {
+                shuffledNumbers.push_back(8);
+                break;
+            }
+        }
     }
-    int tmp = shuffledNumbers[4];
-    shuffledNumbers[4] = shuffledNumbers[eight_ball_index];
-    shuffledNumbers[eight_ball_index] = tmp;
 
     float x_cur = x - 5*ball_size;
     float y_cur = y;
@@ -278,7 +289,7 @@ int main()
     // Testing
     // Ball test_ball = Ball(0.f, 0.f, ball_size, ball_mass, false, sf::Color(255, 255, 255, 150), 999, &font);
     // all_balls.push_back(test_ball);
-    all_balls[0]->velocity = Vector2<float>{0.f, -2500.f};
+    // all_balls[0]->velocity = Vector2<float>{0.f, -2500.f};
 
     // Loop to run the game
     while (window.isOpen())
@@ -304,13 +315,12 @@ int main()
                     if (event.mouseButton.button == sf::Mouse::Left) {
                         
                         if(rmb_toggle) break;
+                        if(!none_moving(&all_balls)) break;
                         sf::Vector2i tmp = sf::Mouse::getPosition(window);
-                        drag_start_position = window_position_transform({(float)tmp.x, (float)tmp.y}, translate, zoom);
-
+                      
+                        mouse_position = window_position_transform({(float)tmp.x, (float)tmp.y}, translate, zoom);
+                        all_balls[0]->velocity = (mouse_position - all_balls[0]->position)*power_multiplier;
                         lmb_toggle = true;
-
-                        printf("%f, %f\n", drag_start_position.x, drag_start_position.y);
-                        
                     }
                     if (event.mouseButton.button == sf::Mouse::Right) {
                         if(lmb_toggle) break;
@@ -378,7 +388,7 @@ int main()
         }
         // test_ball.draw(&window);
         for(Line* line : all_lines) {
-            line->draw(&window);
+            // line->draw(&window);
         }
 
         // Display
