@@ -179,7 +179,6 @@ class Ball {
         }
     }
 
-
     void draw(sf::RenderWindow *window) {
         back.setPosition(position.x, position.y);
         window->draw(back);

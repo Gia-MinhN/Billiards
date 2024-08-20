@@ -15,7 +15,7 @@ using namespace std;
 const int window_width = 1000;
 const int window_height = 1000;
 
-const int sub_updates = 4;
+const int sub_updates = 8;
 
 const int ball_size = 25;
 const int ball_mass = 100;
@@ -172,21 +172,29 @@ void check_ball_line_collision(vector<Ball*> *all_balls, vector<Line*> *all_line
     }
 }
 
-void sub_update(vector<Ball*> *all_balls, float dt) {
-    for(auto ball : *all_balls) {
-        ball->update(dt);
-    }
-}
-
-void update(vector<Ball*> *all_balls, vector<Line*> *all_lines, float dt) {
-    float sub_dt = dt / sub_updates;
-    for(int i = 0; i < sub_updates; i++) {
-        sub_update(all_balls, sub_dt);
-        check_ball_line_collision(all_balls, all_lines);
-    }
-}
-
 void ball_to_ball_collision(vector<Ball*> *all_balls){
+
+    // for(auto b1 : *all_balls) {
+    //     for(auto b2 : *all_balls) {
+    //         if(b1->number == b2->number) break;
+    //         float distance_val = distance(b1->position, b2->position);
+    //         float sum_radius = b1->radius + b2->radius;
+    //         if (distance_val < sum_radius) {
+    //             //Normalize
+    //             Vector2<float> normalize = unit(b1->position - b2->position);
+
+    //             //i Ball Velocity Vector
+    //             float dot_i = dot(b1->velocity, normalize);
+    //             Vector2<float> velocity_xi = normalize * dot_i;
+    //             Vector2<float> velocity_yi = b1->velocity - velocity_xi;
+
+    //             //j Ball Velocity Vector
+    //             float dot_j = dot(b2->velocity, normalize);
+    //             Vector2<float> velocity_xj = normalize * dot_j;
+    //             Vector2<float> velocity_yj = b2->velocity - velocity_xj;
+    //         }
+    //     }
+    // }
 
     int ball_mass_i = ball_mass;
     int ball_mass_j = ball_mass;
@@ -217,26 +225,33 @@ void ball_to_ball_collision(vector<Ball*> *all_balls){
                     //Velocities of both balls
                     Vector2<float> velocity_i = (velocity_xi * ((ball_mass_i - ball_mass_j)/(ball_mass_i + ball_mass_j))) + (velocity_xj * ((2 * ball_mass_j)/(ball_mass_i + ball_mass_j))) + velocity_yi;
                     Vector2<float> velocity_j = (velocity_xi * ((2 * ball_mass_i)/(ball_mass_i + ball_mass_j))) + (velocity_xj * ((ball_mass_j - ball_mass_i)/(ball_mass_i + ball_mass_j))) + velocity_yj;
-                    cout << "Velocity_x: (" << velocity_i.x << ", " << velocity_i.y << ")" << endl;
-                    cout << "Velocity_y: (" << velocity_j.x << ", " << velocity_j.y << ")" << endl;
 
                     (*all_balls)[i]->velocity = velocity_i;
                     (*all_balls)[j]->velocity = velocity_j;
 
-                    Vector2<float> correction_overlap = normalize * (sum_radius/2);
+                    Vector2<float> correction_overlap = normalize * (distance_val - sum_radius);
                     
-                    (*all_balls)[i]->position = (*all_balls)[i]->position - correction_overlap;
-                    (*all_balls)[j]->position = (*all_balls)[j]->position + correction_overlap;
-
-
-                    
+                    (*all_balls)[i]->position = (*all_balls)[i]->position + correction_overlap;
+                    (*all_balls)[j]->position = (*all_balls)[j]->position - correction_overlap;
                 }
-            }
-            
+            }  
         }
-
     }
+}
 
+void sub_update(vector<Ball*> *all_balls, float dt) {
+    for(auto ball : *all_balls) {
+        ball->update(dt);
+    }
+}
+
+void update(vector<Ball*> *all_balls, vector<Line*> *all_lines, float dt) {
+    float sub_dt = dt / sub_updates;
+    for(int i = 0; i < sub_updates; i++) {
+        sub_update(all_balls, sub_dt);
+        ball_to_ball_collision(all_balls);
+        check_ball_line_collision(all_balls, all_lines);
+    }
 }
 
 int main()
@@ -369,10 +384,6 @@ int main()
             translate = drag_start_position - mouse_position;
             view.setCenter(translate.x, translate.y);
         }
-
-        //Ball to Ball Collision Position Change
-        ball_to_ball_collision(&all_balls);
-
         // Updates
         float dt = clock.restart().asSeconds();
         update(&all_balls, &all_lines, dt);
@@ -386,7 +397,6 @@ int main()
         for(Ball* ball : all_balls) {
             ball->draw(&window);
         }
-        // test_ball.draw(&window);
         for(Line* line : all_lines) {
             // line->draw(&window);
         }
