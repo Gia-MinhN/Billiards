@@ -186,6 +186,59 @@ void update(vector<Ball*> *all_balls, vector<Line*> *all_lines, float dt) {
     }
 }
 
+void ball_to_ball_collision(vector<Ball*> *all_balls){
+
+    int ball_mass_i = ball_mass;
+    int ball_mass_j = ball_mass;
+
+    
+    for(int i = 0; i <= 15; i++){
+        for(int j = 0; j <= 15; j++){
+            if (i != j){
+                float distance_val = distance((*all_balls)[i]->position, (*all_balls)[j]->position);
+                //float distance = sqrtf((difference_vector.x * difference_vector.x) + (difference_vector.y * difference_vector.y));
+                float sum_radius = ball_size*2; //Since radius is equal for all balls
+                if (distance_val < sum_radius){
+                    
+                    //Normalize
+                    Vector2<float> normalize = unit((*all_balls)[j]->position - (*all_balls)[i]->position);
+                    
+                    //i Ball Velocity Vector
+                    float dot_i = dot((*all_balls)[i]->velocity, normalize);
+                    Vector2<float> velocity_xi = normalize * dot_i;
+                    Vector2<float> velocity_yi = (*all_balls)[i]->velocity - velocity_xi;
+                    
+
+                    //j Ball Velocity Vector
+                    float dot_j = dot((*all_balls)[j]->velocity, normalize);
+                    Vector2<float> velocity_xj = normalize * dot_j;
+                    Vector2<float> velocity_yj = (*all_balls)[j]->velocity - velocity_xj;
+
+                    //Velocities of both balls
+                    Vector2<float> velocity_i = (velocity_xi * ((ball_mass_i - ball_mass_j)/(ball_mass_i + ball_mass_j))) + (velocity_xj * ((2 * ball_mass_j)/(ball_mass_i + ball_mass_j))) + velocity_yi;
+                    Vector2<float> velocity_j = (velocity_xi * ((2 * ball_mass_i)/(ball_mass_i + ball_mass_j))) + (velocity_xj * ((ball_mass_j - ball_mass_i)/(ball_mass_i + ball_mass_j))) + velocity_yj;
+                    cout << "Velocity_x: (" << velocity_i.x << ", " << velocity_i.y << ")" << endl;
+                    cout << "Velocity_y: (" << velocity_j.x << ", " << velocity_j.y << ")" << endl;
+
+                    (*all_balls)[i]->velocity = velocity_i;
+                    (*all_balls)[j]->velocity = velocity_j;
+
+                    Vector2<float> correction_overlap = normalize * (sum_radius/2);
+                    
+                    (*all_balls)[i]->position = (*all_balls)[i]->position - correction_overlap;
+                    (*all_balls)[j]->position = (*all_balls)[j]->position + correction_overlap;
+
+
+                    
+                }
+            }
+            
+        }
+
+    }
+
+}
+
 int main()
 {
     Vector2<float> drag_start_position;
@@ -260,9 +313,11 @@ int main()
                 }
                 case sf::Event::MouseButtonPressed: {
                     if (event.mouseButton.button == sf::Mouse::Left) {
+                        
                         if(rmb_toggle) break;
                         if(!none_moving(&all_balls)) break;
                         sf::Vector2i tmp = sf::Mouse::getPosition(window);
+                      
                         mouse_position = window_position_transform({(float)tmp.x, (float)tmp.y}, translate, zoom);
                         all_balls[0]->velocity = (mouse_position - all_balls[0]->position)*power_multiplier;
                         lmb_toggle = true;
@@ -315,6 +370,9 @@ int main()
             view.setCenter(translate.x, translate.y);
         }
 
+        //Ball to Ball Collision Position Change
+        ball_to_ball_collision(&all_balls);
+
         // Updates
         float dt = clock.restart().asSeconds();
         update(&all_balls, &all_lines, dt);
@@ -322,7 +380,7 @@ int main()
         // Reset window
         window.clear(sf::Color(50, 150, 150, 255));
         window.setView(view);
-
+        
         // Drawing
         table.draw(&window);
         for(Ball* ball : all_balls) {
