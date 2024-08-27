@@ -15,12 +15,14 @@ using namespace std;
 const int window_width = 1000;
 const int window_height = 1000;
 
+const float default_zoom = 2.f;
+
 const int sub_updates = 8;
 
 const int ball_size = 25;
 const int ball_mass = 100;
 const float friction = 1.f;
-const float power_multiplier = 1.f;
+const float power_multiplier = 2.f;
 const float line_distance = 422;
 const sf::Color color_order[7] = {
     sf::Color(227, 211, 36, 255), // yellow 
@@ -163,8 +165,8 @@ void ball_line_collision(Ball *ball, Line *line) {
 }
 
 void check_ball_line_collision(vector<Ball*> *all_balls, vector<Line*> *all_lines) {
-    for(auto ball : (*all_balls)) {
-        for(auto line : (*all_lines)) {
+    for(auto ball : *all_balls) {
+        for(auto line : *all_lines) {
             if(line->collision(ball->position, ball->radius)) {
                 ball_line_collision(ball, line);
             }
@@ -173,68 +175,38 @@ void check_ball_line_collision(vector<Ball*> *all_balls, vector<Line*> *all_line
 }
 
 void ball_to_ball_collision(vector<Ball*> *all_balls){
+    for(auto b1 : *all_balls) {
+        for(auto b2 : *all_balls) {
+            if(b1->number == b2->number) break;
 
-    // for(auto b1 : *all_balls) {
-    //     for(auto b2 : *all_balls) {
-    //         if(b1->number == b2->number) break;
-    //         float distance_val = distance(b1->position, b2->position);
-    //         float sum_radius = b1->radius + b2->radius;
-    //         if (distance_val < sum_radius) {
-    //             //Normalize
-    //             Vector2<float> normalize = unit(b1->position - b2->position);
+            float overshot = distance(b1->position, b2->position) - (b1->radius + b2->radius);
 
-    //             //i Ball Velocity Vector
-    //             float dot_i = dot(b1->velocity, normalize);
-    //             Vector2<float> velocity_xi = normalize * dot_i;
-    //             Vector2<float> velocity_yi = b1->velocity - velocity_xi;
+            if (overshot <= 0) {
+                //Normalize
+                Vector2<float> normalize = unit(b1->position - b2->position);
 
-    //             //j Ball Velocity Vector
-    //             float dot_j = dot(b2->velocity, normalize);
-    //             Vector2<float> velocity_xj = normalize * dot_j;
-    //             Vector2<float> velocity_yj = b2->velocity - velocity_xj;
-    //         }
-    //     }
-    // }
+                //i Ball Velocity Vector
+                float dot_i = dot(b1->velocity, normalize);
+                Vector2<float> velocity_xi = normalize * dot_i;
+                Vector2<float> velocity_yi = b1->velocity - velocity_xi;
 
-    int ball_mass_i = ball_mass;
-    int ball_mass_j = ball_mass;
+                //j Ball Velocity Vector
+                float dot_j = dot(b2->velocity, normalize);
+                Vector2<float> velocity_xj = normalize * dot_j;
+                Vector2<float> velocity_yj = b2->velocity - velocity_xj;
 
-    
-    for(int i = 0; i <= 15; i++){
-        for(int j = 0; j <= 15; j++){
-            if (i != j){
-                float distance_val = distance((*all_balls)[i]->position, (*all_balls)[j]->position);
-                //float distance = sqrtf((difference_vector.x * difference_vector.x) + (difference_vector.y * difference_vector.y));
-                float sum_radius = ball_size*2; //Since radius is equal for all balls
-                if (distance_val < sum_radius){
+                //Velocities of both balls
+                Vector2<float> velocity_i = (velocity_xi * ((b1->mass - b2->mass)/(b1->mass + b2->mass))) + (velocity_xj * ((2 * b2->mass)/(b1->mass + b2->mass))) + velocity_yi;
+                Vector2<float> velocity_j = (velocity_xi * ((2 * b1->mass)/(b1->mass + b2->mass))) + (velocity_xj * ((b2->mass - b1->mass)/(b1->mass + b2->mass))) + velocity_yj;
+
+                b1->velocity = velocity_i;
+                b2->velocity = velocity_j;
+
+                Vector2<float> correction_overlap = normalize * overshot;
                     
-                    //Normalize
-                    Vector2<float> normalize = unit((*all_balls)[j]->position - (*all_balls)[i]->position);
-                    
-                    //i Ball Velocity Vector
-                    float dot_i = dot((*all_balls)[i]->velocity, normalize);
-                    Vector2<float> velocity_xi = normalize * dot_i;
-                    Vector2<float> velocity_yi = (*all_balls)[i]->velocity - velocity_xi;
-                    
-
-                    //j Ball Velocity Vector
-                    float dot_j = dot((*all_balls)[j]->velocity, normalize);
-                    Vector2<float> velocity_xj = normalize * dot_j;
-                    Vector2<float> velocity_yj = (*all_balls)[j]->velocity - velocity_xj;
-
-                    //Velocities of both balls
-                    Vector2<float> velocity_i = (velocity_xi * ((ball_mass_i - ball_mass_j)/(ball_mass_i + ball_mass_j))) + (velocity_xj * ((2 * ball_mass_j)/(ball_mass_i + ball_mass_j))) + velocity_yi;
-                    Vector2<float> velocity_j = (velocity_xi * ((2 * ball_mass_i)/(ball_mass_i + ball_mass_j))) + (velocity_xj * ((ball_mass_j - ball_mass_i)/(ball_mass_i + ball_mass_j))) + velocity_yj;
-
-                    (*all_balls)[i]->velocity = velocity_i;
-                    (*all_balls)[j]->velocity = velocity_j;
-
-                    Vector2<float> correction_overlap = normalize * (distance_val - sum_radius);
-                    
-                    (*all_balls)[i]->position = (*all_balls)[i]->position + correction_overlap;
-                    (*all_balls)[j]->position = (*all_balls)[j]->position - correction_overlap;
-                }
-            }  
+                b1->position = b1->position - correction_overlap;
+                b2->position = b2->position + correction_overlap;
+            }
         }
     }
 }
@@ -260,7 +232,7 @@ int main()
     Vector2<float> mouse_position;
 
     Vector2<float> translate  = {0.f, 0.f};
-    float          zoom       = 4.f;
+    float          zoom       = default_zoom;
     bool           lmb_toggle = false;
     bool           rmb_toggle = false;
 
@@ -300,11 +272,6 @@ int main()
     for(int i = 0; i < size(line_points); i += 2) {
         all_lines.push_back(new Line(line_points[i], line_points[i+1]));
     }
-
-    // Testing
-    // Ball test_ball = Ball(0.f, 0.f, ball_size, ball_mass, false, sf::Color(255, 255, 255, 150), 999, &font);
-    // all_balls.push_back(test_ball);
-    // all_balls[0]->velocity = Vector2<float>{0.f, -2500.f};
 
     // Loop to run the game
     while (window.isOpen())
@@ -361,7 +328,7 @@ int main()
                             break;
                         }
                         case sf::Keyboard::R: {
-                            zoom = 4.f;
+                            zoom = default_zoom;
                             translate = {0, 0};
                             view.setSize(window_width*zoom, window_height*zoom);
                             view.setCenter(0, 0);
