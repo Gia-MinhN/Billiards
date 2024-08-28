@@ -107,6 +107,7 @@ class Ball {
     bool              is_striped;
     sf::Color         color;
     int               number;
+    bool              is_moving;
 
     //Constructors
     Ball(float x, float y, float r, float m, float f, bool striped, sf::Color col, int num, sf::Font *font) {
@@ -118,6 +119,7 @@ class Ball {
         is_striped = striped;
         color = col;
         number = num;
+        is_moving = false;
 
         back.setRadius(radius);
         back.setOrigin(radius, radius);
@@ -165,7 +167,7 @@ class Ball {
     }
 
     // Methods
-    bool is_moving() {
+    bool moving() {
         return magnitude(velocity) >= 10.f;
     }
 
@@ -174,8 +176,11 @@ class Ball {
         position = position + velocity*dt + acceleration*dt*dt/2.f;
         velocity = velocity + acceleration*dt;
 
-        if(magnitude(velocity) < 10.f) {
-            velocity = Vector2<float>{0.f, 0.f};
+        if(is_moving) {
+            if(!moving()) {
+                velocity = Vector2<float>{0.f, 0.f};
+                is_moving = false;
+            }
         }
     }
 
@@ -213,7 +218,7 @@ class Cue {
     }
 
     void draw(sf::RenderWindow *window) {
-
+        
     }
 };
 

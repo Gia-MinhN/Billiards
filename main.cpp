@@ -76,22 +76,26 @@ bool within_ball(Vector2<float> position, Ball ball) {
     return distance(position, ball.position) <= ball_size;
 }
 
-vector<Ball*> generate_all_balls(sf::Font *font) {
+vector<Ball*> generate_all_balls(vector<bool*> *balls_moving, sf::Font *font) {
     vector<Ball*> all_balls;
     // White ball
     all_balls.push_back(new Ball(0.f, 0.f, ball_size, ball_mass, friction, false, WHITE, 0, font));
+    balls_moving->push_back(&(all_balls.back()->is_moving));
 
     // Solid balls
     for(int i = 1; i <= 7; i++) {
         all_balls.push_back(new Ball(0.f, 0.f, ball_size, ball_mass, friction, false, color_order[i-1], i, font));
+        balls_moving->push_back(&(all_balls.back()->is_moving));
     }
     
     // Black 8 ball
     all_balls.push_back(new Ball(0.f, 0.f, ball_size, ball_mass, friction, false, sf::Color::Black, 8, font));
+    balls_moving->push_back(&(all_balls.back()->is_moving));
 
     // Striped balls
     for(int i = 1; i <= 7; i++) {
         all_balls.push_back(new Ball(0.f, 0.f, ball_size, ball_mass, friction, true, color_order[i-1], i+8, font));
+        balls_moving->push_back(&(all_balls.back()->is_moving));
     }
 
     return all_balls;
@@ -153,9 +157,15 @@ void triangle(float x, float y, vector<Ball*> *all_balls) {
     }
 }
 
-bool none_moving(vector<Ball*> *all_balls) {
-    for(auto ball : *all_balls) {
-        if(ball->is_moving()) return false;
+void set_all_moving(vector<bool*> *balls_moving) {
+    for(auto moving_bool : *balls_moving) {
+        *moving_bool = true;
+    }
+}
+
+bool none_moving(vector<bool*> *balls_moving) {
+    for(auto moving_bool : *balls_moving) {
+        if(*moving_bool) return false;
     }
     return true;
 }
@@ -235,6 +245,7 @@ int main()
     float          zoom       = default_zoom;
     bool           lmb_toggle = false;
     bool           rmb_toggle = false;
+    vector<bool*>  balls_moving;
 
     // Settings
     sf::ContextSettings settings;
@@ -263,7 +274,7 @@ int main()
 
     // Ball setup
     Table table = Table({0.f, 0.f}, 1.f, {423.5f, -834.5f}, {475.f, 0.f}, ball_size*2, &image);
-    vector<Ball*> all_balls = generate_all_balls(&font);
+    vector<Ball*> all_balls = generate_all_balls(&balls_moving, &font);
     triangle(0, -422, &all_balls);
     all_balls[0]->position = {0, line_distance};
     
@@ -297,11 +308,12 @@ int main()
                     if (event.mouseButton.button == sf::Mouse::Left) {
                         
                         if(rmb_toggle) break;
-                        if(!none_moving(&all_balls)) break;
+                        if(!none_moving(&balls_moving)) break;
                         sf::Vector2i tmp = sf::Mouse::getPosition(window);
                       
                         mouse_position = window_position_transform({(float)tmp.x, (float)tmp.y}, translate, zoom);
                         all_balls[0]->velocity = (mouse_position - all_balls[0]->position)*power_multiplier;
+                        set_all_moving(&balls_moving);
                         lmb_toggle = true;
                     }
                     if (event.mouseButton.button == sf::Mouse::Right) {
